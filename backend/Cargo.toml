@@ -1,0 +1,12 @@
+[package]
+name = "coffeevm-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bollard = "0.17.1"
+crossbeam-channel = "0.5.13"
+ctrlc = "3.4.5"
+futures = "0.3.30"
+futures-util = "0.3.30"
+tokio = { version = "1.40.0", features = ["full"] }
