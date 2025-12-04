@@ -2,14 +2,23 @@ package main
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"os"
-	"slices"
 
 	moby "github.com/moby/moby/client"
+
+	"main/coffeevm"
 )
 
 func main() {
+	logchan := make(chan string)
+	
+	go func() {
+		for {
+			fmt.Println(<-logchan)
+		}
+	}()
+	
 	client, err := moby.New(moby.WithAPIVersion("1.52"));
 	if err != nil {
 		println(err.Error())
@@ -17,32 +26,14 @@ func main() {
 		return
 	}
 	ctx := context.Background()
-	images, _ := client.ImageList(ctx, moby.ImageListOptions{All: true})
-	foundImage := false
-	for _, image := range images.Items {
-		if slices.Contains(image.RepoTags, "alpine:latest") {
-			foundImage = true
-		}
-		if foundImage {
-			break
-		}
+	
+	err = coffeevm.EnsureImage(logchan, ctx, client, "alpine:latest")
+	if err != nil {
+		println(err.Error())
+		os.Exit(1)
+		return
 	}
-	if !foundImage {
-		println("Image alpine:latest not found, installing")
-		resp, err := client.ImagePull(ctx, "alpine:latest", moby.ImagePullOptions{})
-		if err != nil {
-			println(err.Error())
-			os.Exit(1)
-			return
-		}
-		defer resp.Close()
-		_, err = io.Copy(io.Discard, resp)
-		if err != nil {
-			println(err.Error())
-			os.Exit(1)
-			return
-		}
-	}
+
 	resp, err := client.ContainerCreate(ctx, moby.ContainerCreateOptions{
 		Image: "alpine:latest",
 	})
